@@ -1,0 +1,15 @@
+129b1923bcf067b96412cde24db43b60 *DESCRIPTION
+4387dd74474858f33c4a2deb8b5e9274 *NAMESPACE
+b69f2241ceb8ae2b815b1abc1bf8821f *R/calc.AUC.R
+d2084ec8ce6ed6bef827018cee913d1f *R/calc.kw.R
+069b2f9be017613c0979443f5aad0ae3 *R/is.monotone.R
+820d235d2ff68ce16247de5391cf807a *R/mayo.R
+10fa6597571b18e6143da1a8ef1c563a *R/plot.tdROC.R
+ec8f923920865b16519ff025494b98f5 *R/tdROC.R
+6a44733659a0df704dedd00b6ec31995 *data/mayo.rda
+d1cda3ddb2d01220e3f77e2f7613d710 *man/calc.AUC.Rd
+4b7564fdc2f0a45c4e18d5ef6a141ed8 *man/calc.kw.Rd
+30dad0bba0ec8caad943d8b292159b73 *man/is.monotone.Rd
+73cce7960e4a5e874f49347b549bbfb8 *man/mayo.Rd
+4cfbd5fdeb5b3d229bb2c414a23d4279 *man/plot.tdROC.Rd
+b4eccfe8809f8a4335e52f0feb5241d7 *man/tdROC.Rd

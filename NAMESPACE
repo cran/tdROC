@@ -1,0 +1,7 @@
+exportPattern("^[[:alpha:]]+")
+import(survival)
+importFrom(graphics, plot)
+importFrom(stats, quantile, sd)
+importFrom(utils, getS3method, type.convert)
+S3method(plot, tdROC)
+
