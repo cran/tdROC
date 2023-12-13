@@ -26,8 +26,7 @@ Return a vector of kernel weights for each element in X. It has the same length 
 This function calculate the nearest neighbor kernel weights using uniform kernel weights.
 }
 \note{
-X must be the vector of ALL biomarker values in the data; it cannot
+X must be the vector of ALL risk score values in the data; it cannot
       be any other vector of arbitrary length.
 }
 \keyword{internal}
-

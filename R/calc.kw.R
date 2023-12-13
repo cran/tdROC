@@ -10,45 +10,31 @@
 #' @param x0 a scalar as the center around which the kernel weights are calculated.
 #' @param X the vector of biomarker values from other subjects used to calculate the weights around the center x0.
 #' @return Return a vector of kernel weights for each element in X. It has the same length as X.
-#' @note X must be the vector of ALL biomarker values in the data; it cannot
+#' @note X must be the vector of ALL risk score values in the data; it cannot
 #'       be any other vector of arbitrary length.
 #' @keywords internal
 
+calc.kw <- function(X, x0, span = 0.1, h = NULL, type = "uniform") {
 
-calc.kw <- function( X, x0, span = 0.1, h=NULL, type="uniform" ) {
-  # Calculate the nearest neighbor kernel weights
-  # Arguments:
-  #  -- span: the proportion of observations used
-  #  -- h: the bandwidth of kernel weights
-  #  -- type: the type of kernel function, "uniform", "Epanichnekov" and "normal"
-  #  -- x0: the x0 around which the kernel weights are calculated
-  #  -- X: the vector of all biomarker values in the data
-  # Return:
-  #  a vector of kernel weights for each element in X
-  # NOTE: X must be the vector of ALL biomarker values in the data; it cannot
-  #       be any other vector of arbitrary length
+  if (is.null(h) & !is.null(span)) {
+    n <- length(X)
+    tmp0 <- abs(X - x0)
+    tmp1 <- sort(tmp0)
+    tmp2 <- tmp1[ceiling(n * span)]
+    ans <- as.numeric(tmp0 <= tmp2)
+  } else if (!is.null(h)) {
+    x.new <- (X - x0) / h
 
-  if (is.null (h) & !is.null(span)){
-    n <- length(X) ;
-    tmp0 <- abs( X-x0 ) ;
-    tmp1 <- sort( tmp0 ) ;
-    tmp2 <- tmp1[ ceiling(n*span) ] ;
-    # the cut off that defines the neighborhood
-    ans <- as.numeric( tmp0 <= tmp2 ) ;
-  } else if (!is.null(h)){
-    x.new <- (X-x0)/h ;
-
-    if ( type == "uniform" ) {
-      ans <- as.numeric( abs(x.new) <= 1 )/(2*h) ;
-    } else if ( type == "Epanichnekov" ) {
-      ans <- 0.75*(1-x.new*x.new)*as.numeric( abs(x.new) <= 1 )/h ;
+    if (type == "uniform") {
+      ans <- as.numeric(abs(x.new) <= 1) / (2 * h)
+    } else if (type == "Epanichnekov") {
+      ans <- 0.75 * (1 - x.new * x.new) * as.numeric(abs(x.new) <= 1) / h
     } else {
-      ans <- 1/sqrt(2*pi)*exp(-1/2*x.new^2)/h
+      ans <- 1 / sqrt(2 * pi) * exp(-1 / 2 * x.new^2) / h
     }
-  } else if ( is.null(span) & is.null(h)){
-    print ("error! span or h needs to be specified!")
+  } else if (is.null(span) & is.null(h)) {
+    print("error! span or h needs to be specified!")
   }
 
-  ans ;
+  ans
 }
-

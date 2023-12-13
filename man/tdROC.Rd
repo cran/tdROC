@@ -2,85 +2,142 @@
 % Please edit documentation in R/tdROC.R
 \name{tdROC}
 \alias{tdROC}
-\title{Calculate Time-dependent ROC and AUC}
+\title{Estimate time-dependent prediction accuracy measures, including the ROC, AUC, Brier score,
+   and survival difference, with right-censored survival data.}
 \usage{
-tdROC(X, Y, delta, tau, span = 0.1, h = NULL, type = "uniform",
-  cut.off = NULL, nboot = 0, alpha = 0.05, n.grid = 1000,
-  X.min = NULL, X.max = NULL)
+tdROC(
+  X,
+  Y,
+  delta,
+  tau,
+  span = 0.1,
+  h = NULL,
+  type = "uniform",
+  n.grid = 1000,
+  X.min = NULL,
+  X.max = NULL,
+  cut.off = NULL,
+  nboot = 0,
+  alpha = 0.05,
+  epsilon = NULL,
+  method = "both",
+  output = "both"
+)
 }
 \arguments{
-\item{X}{a numeric vector of biomarker values. Same length with \code{Y} and \code{delta}.}
+\item{X}{a numeric vector of risk score in the same length as \code{Y} and \code{delta}, such as biomarker or predicted probability. A higher value indicates higher risk of the event.
+The calibration results (Brier score, survival difference) are applicable only when the risk score has the predicted probability interpretation.}
 
-\item{Y}{a numeric vector of time to event.Same length with \code{X} and \code{delta}.}
+\item{Y}{a numeric vector of time to event in the same length as \code{X} and \code{delta}.}
 
-\item{delta}{a vector of binary indicator of event (1) or censoring (0). Same length with \code{X} and \code{Y}.}
+\item{delta}{a vector of binary indicator of event (1) or censoring (0) in the same length as \code{X} and \code{Y}.}
 
 \item{tau}{a scalar, the prediction horizon at which the prediction is evaluated.}
 
-\item{span}{a numeric value, the proportion of neighbour observations used in nearest neighbor method, default is 0.1.}
+\item{span}{a numeric value, the proportion of neighbour observations used in nearest neighbor method, default to 0.1.}
 
-\item{h}{a numeric value, the bandwidth of kernel weights, defualt is \code{NULL}. If not specified, the function will use the value of
+\item{h}{a numeric value, the bandwidth of kernel weights, the defualt is \code{NULL}. If not specified, the function will use the value of
 \code{span} to calculate kernel weights. In case both \code{span} and \code{h} are specified, the function will use \code{h}.}
 
-\item{type}{a character value, indicating the type of kernel function used to calculate kernel weights. Default is "\code{uniform}" kernel. Other options are "\code{Epanechnikov}" and "\code{normal}".
+\item{type}{a character value, indicating the type of kernel function used to calculate kernel weights. The default is \code{"uniform"} kernel. Other options are \code{"Epanechnikov"} and \code{"normal"}.
 It will only be used when the bandwidth \code{h} is specified.}
 
-\item{cut.off}{a vector of biomarker cut-off values at which sensitivity and specificity will be calculated.When bootstrap is requested, the corresponding confidence intervals will also be provided.}
+\item{n.grid}{a positive integer, the number of grid points used when calculating the ROC curve. The default is \code{1000}.}
 
-\item{nboot}{the number of bootstrap replications to be used for variance estimation; default is \code{nboot = 0}, corresponding to no variance estimation.}
+\item{X.min}{the lower boundary of grid cut-off points for biomarker \code{X}. The default is the minimum of \code{X}.}
 
-\item{alpha}{\code{1-level of confidence interval}, default is \code{0.05}. It is used only when \code{nboot > 0}.}
+\item{X.max}{the upper boundary of grid cut-off points for biomarker \code{X}. The default is the maximum of \code{X}.}
 
-\item{n.grid}{an positive integer, the number of grid points used when calculating the ROC curve. The default is \code{1000}.}
+\item{cut.off}{a vector of \code{X} cut-off values at which sensitivity and specificity will be calculated.}
 
-\item{X.min}{the lower boundary of grid cut-off points for biomarker \code{X}. If not specified, default will be the minimum of biomarker \code{X}.}
+\item{nboot}{the number of bootstrap replications to be used for variance estimation. The default is \code{nboot = 0}, corresponding to no variance estimation.}
 
-\item{X.max}{the upper boundary of grid cut-off points for biomarker \code{X}. If not specified, default will be the maximum of biomarker \code{X}.
-\code{X.min} and \code{X.max} are not needed for point estimate but are needed for bootstrap variance estimation.}
+\item{alpha}{It is (1 - level of confidence interval)/2, default is \code{0.05}. It is used only when \code{nboot > 0}.}
+
+\item{epsilon}{The precision parameter used in an approximation to the weight calculation when the sample size is large. If a weight corresponding to a specific risk score is already calculated,
+then the weights corresponding to adjacent risk scores, within the distance specified by epsilon, will be the same under the approximation. This approximation avoids repeated
+calculation of weights that are almost the same, and hence increases the speed of computation in this situation. The default is NULL, which means no approximation is used. A higher
+value indicates less precision.}
+
+\item{method}{It is used to specify which method you would like to use to estimate AUC, default to \code{"both"}. Other options are \code{"integral"} and \code{"empirical"}.}
+
+\item{output}{It is used to specify which kind of output you want, default to \code{"both"}. Other options are \code{"AUC"}, including AUC, sensitivity, and specificity are included,
+and \code{"calibration"} including Brier Score and survival difference.}
 }
 \value{
 Returns a list of the following items:
 
-\code{ROC:} a data frame of dimension \code{(2+n.grid) x 3}, the three columns are: \code{grid}, \code{sens}, and \code{spec}.
+\code{main_res:} a list of \code{AUC.integral} estimated by trapezoidal integration, \code{AUC.empirical} estimated by empirical estimator of the proportion of concordance pairs.
+ and a data frame \code{ROC} with dimension \code{(2+n.grid) x 3} with columns \code{cut.off}, \code{sens}, and \code{spec}.
 
-\code{AUC:} a data frame of one row and four columns: \code{AUC}, standard error of \code{AUC}, the lower and upper limits of bootstrap CI.
- \code{AUC} is calculated by integrating the area under ROC curve with trapezoidal method.
+\code{calibration_res:} brier score and survival difference estimated based on the formula similar to Wu and Li (2018). When the risk score \code{X}
+is a biomarker value instead of a predicted cumulative incidence probability, the brier score and survival difference cannot be calculated. In this case, please disregard the calibration results.
 
-\code{AUC2:} a data frame of one row and four columns: \code{AUC2}, standard error of \code{AUC2}, the lower and upper limits of bootstrap CI.
- \code{AUC2} is the AUC calculated by the concordance based formula (Li \emph{et al.}, 2015).
-
-\code{prob:} a data frame of three columns if \code{nboot=0}: \code{cut.off}, \code{sens}, and \code{spec}. If \code{nboot>0}, another six
-       columns of standard error, lower and upper limits of both \code{sens} and \code{spec} will be added. The number of rows equals length of \code{cut.off}.
-             A series of sensivitity and specificity are calculated at requested \code{cut.off} points.
+\code{boot_res:} a list of bootstrap results, including \code{bAUC}, \code{bAUC2}, \code{bBS}, \code{bSurvDiff}, \code{bROC}.
+ For \code{bAUC}, \code{bAUC2}, \code{bBS}, \code{bSurvDiff}, each one is a list including corresponding mean, standard deviation, and confidence interval.
+ \code{bROC} is a data frame with colomns \code{sens.mean}, \code{sens.sd}, \code{sens.lower}, \code{sens.upper}, \code{spec.mean}, \code{spec.sd}, \code{spec.lower}, \code{spec.upper}
 }
 \description{
-This is the main function of this package. It calculates the time-dependent
- sensitivity and specificity and area under the curve (AUC) using a nonparametric weighting adjustment.
- It also provides variance estimation through bootstrap.
+This is a core function of the ‘tdROC‘ package. It uses the nonparametric weights proposed by Li (Li et al., 2015)
+to estimate a number of time-dependent prediction accuracy measures for right-censored survival outcomes,
+including ROC curve, AUC, Brier score, and survival difference. For each measure, the variance can be estimated
+through bootstrap resampling.
 }
 \details{
-This function read in the prognostic biomarker value \code{X}, the time-to-event data \code{Y} and censoring indicator \code{delta} to calculate
- the sensitivity and specificity at the prediction horizon \code{tau} for a series specified grid points. It uses a simple
- nonparametric weight adjustments for right censored data (Li \emph{et al.}, 2015).
+This function takes the risk score value \code{X}, the time-to-event data \code{Y} and censoring indicator \code{delta} as input to estimate
+ a number of time-dependent prediction accuracy measures for right-censored survival outcomes, including ROC curve, AUC, Brier score, and survival difference.
+ The confidence intervals of above quantities will be estimated by bootstrap.
+
+ This function offer two options to estimate AUC. The first one make use of estimated sensitivity and specificity to calculate the AUC via trapezoidal integration
+ by setting a series of cutoff point. The output will also include corresponding sensitivity and specificity for our plot function. The other one estimate AUC by the empirical estimator
+ of the proportion of concordance pairs with proposed weight estimator (Li et al, 2015). These two methods will generate quite similar estimates. The option can be set by argument \code{method}.
+
+ We also include Brier Score and survival difference to evaluate the calibration metrics. Their definitions are included below.
+ They can be estimated with the proposed conditional probability weight (Wu and Li, 2018).
+ Both of them are measures to assess the accuracy of probabilistic predictions \code{X}. The calibration result makes sense only
+ when the risk score \code{X} is a predicted probability, and should be ignored otherwise.
+
+ \deqn{
+ \text{Brier Score} = E{[1(T \le \tau, \delta = 1) - X]^2}
+ }
+
+ \deqn{
+ \text{Survival difference} = E[1(T \le \tau, \delta = 1) - X]
+ }
+
+ As mentioned in arguments, we introduced a small precision parameter \code{epsilon} to speed up the computation when the sample size is large.
+ For each subject with a risk score, \eqn{X_i}, we assess whether there exists a previously processed grid point, \eqn{X_{grid,m}} where \eqn{1\le m \le j},
+ within the proximity of \eqn{X_i} such that \eqn{|X_i - X_{grid,m}| < \epsilon}. In the absence of such a point, we designate \eqn{X_i} as a new grid point,
+ \eqn{X_{grid,j+1}}, and store the corresponding \code{survfit} object for subsequent weight estimation and mark it as a processed grid point. Conversely,
+ if a previously processed grid point is found, we directly utilize the stored \code{survfit} object associated with it for weight calculation.
+ Given that the most time-consuming step in our estimation process is the \code{survfit} computation, this method significantly reduces computing time
+ without incurring notable bias especially when dealing with large sample sizes.
 }
 \examples{
-library( survival ) ;
-data( mayo ) ;
-dat <- mayo[ ,c( "time","censor","mayoscore5" )] ;
+library(survival)
+data(mayo)
+dat <- mayo[, c("time", "censor", "mayoscore5")]
+fm <- tdROC(
+  X = dat$mayoscore5, Y = dat$time, delta = dat$censor,
+  tau = 365 * 6, span = 0.1, nboot = 0, alpha = 0.05,
+  n.grid = 1000, cut.off = 5:9
+)
+# In the following example, We use biomarker mayoscore5 to estimate predicted probability
+# tipycally a monotone transformation function such as expit() is used to transform biomarker
+# with range out of range into estimated probability between 0 and 1
+expit <- function(x){ 1/(1+exp(-x)) }
 
-fm <- tdROC( X = dat$mayoscore5, Y = dat$time, delta = dat$censor,
-       tau = 365*6, span = 0.1, nboot = 0, alpha = 0.05,
-       n.grid = 1000, cut.off = 5:9 ) ;
+tdROC(
+  X = expit(dat$mayoscore5), Y = dat$time, delta = dat$censor,
+  tau = 365 * 6, span = 0.1, nboot = 0, alpha = 0.05,
+  n.grid = 1000, cut.off = 5:9
+)
+
+tdROC(
+  X = expit(dat$mayoscore5), Y = dat$time, delta = dat$censor,
+  tau = 365 * 6, span = 0.1, nboot = 0, alpha = 0.05,
+  n.grid = 1000, cut.off = 5:9, epsilon = 0.05
+)
+
 
 }
-\author{
-Liang Li, Cai Wu
-}
-\references{
-Li, Liang, Bo Hu, and Tom Greene. "A Simple Method to Estimate the Time-dependent ROC Curve Under Right Censoring." (2015).
-           \url{http://biostats.bepress.com/cobra/art114/}
-}
-\seealso{
-\code{\link[survival]{survfit}},  \code{\link[survivalROC]{mayo}}
-}
-
